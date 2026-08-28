@@ -74,6 +74,19 @@ curl https://your-service.up.railway.app/health
 
 > ملاحظة: ملف `railway.json` هو إعداد نشر بسيط متوافق مع Config as Code الحالي. توضح وثائق Railway أن هذا المسار أصبح قديمًا نسبيًا وتفضّل Infrastructure as Code للمشاريع الجديدة، مع استمرار دعم الملفات الحالية خلال الفترة الانتقالية [1].
 
+## النشر على Vercel بجانب Railway
+
+يدعم المشروع وظائف Vercel منفصلة داخل `api/` دون تعديل `server.js` أو إضافة `type: module` إلى `package.json`. يحتوي `api/package.json` على نطاق ESM محلي، لذلك تعمل `api/chat.js` و`api/health.js` بصيغة `export default` بينما يبقى الخادم الرئيسي متوافقًا مع Railway.
+
+للنشر، أنشئ مشروعًا جديدًا في [Vercel](https://vercel.com) واختر مستودع GitHub. لا يحتاج المشروع إلى أمر بناء مخصص. أضف المتغيرات `GROQ_API_KEY` و`GEMINI_API_KEY`، ويمكنك إضافة `GROQ_MODEL` و`GEMINI_MODEL` و`MAX_MESSAGE_LENGTH` و`REQUEST_TIMEOUT_MS` اختياريًا. بعد النشر تصبح النقاط:
+
+| المنصة | المحادثة | الصحة |
+|---|---|---|
+| Railway | `POST /chat` | `GET /health` |
+| Vercel | `POST /api/chat` | `GET /api/health` |
+
+عند استخدام الواجهة مع Vercel، اضبط رابط الخادم في الإعدادات على `https://your-app.vercel.app/api` لأن الواجهة تضيف `/chat` تلقائيًا، فتصل إلى `POST /api/chat`. أما عند استخدام Railway فاضبطه على `https://your-service.railway.app` للوصول إلى `POST /chat`. إذا كانت الواجهة منشورة ضمن مشروع Vercel نفسه، يمكن لاحقًا جعل العنوان نسبيًا عبر إعداد frontend مخصص. لا تُرفع المفاتيح إلى GitHub، ولا تُعدّل `package.json` الجذر أو `server.js` لهذا المسار.
+
 ## النشر عبر Render
 
 يمكن استخدام نفس مستودع GitHub على Render كخدمة Web Service. استخدم أمر البناء `npm install` وأمر التشغيل `npm start`، واضبط المتغيرات نفسها في لوحة الخدمة. اجعل مسار فحص الصحة `/health` إذا كان الخيار متاحًا في إعدادات الخدمة.
