@@ -47,7 +47,7 @@ curl -X POST http://localhost:3000/chat \
 npx --yes http-server . -p 4173
 ```
 
-ثم افتح `http://127.0.0.1:4173/index.html`. تستخدم الواجهة افتراضيًا `http://localhost:3000`، ويمكن تغيير عنوان الخادم من زر الإعدادات؛ يُحفظ العنوان في `localStorage`. لا تحتاج الواجهة إلى أي مفتاح API.
+ثم افتح `http://127.0.0.1:4173/index.html`. تستخدم الواجهة افتراضيًا `http://localhost:3000`، ويمكن تغيير عنوان الخادم من زر الإعدادات؛ يُحفظ العنوان في `localStorage`. عند إدخال نطاق ينتهي بـ `vercel.app` تضيف الواجهة `/api` تلقائيًا، بينما تبقي عناوين Railway والعناوين المحلية دون تعديل. لا تحتاج الواجهة إلى أي مفتاح API.
 
 ## النشر على Railway
 
@@ -85,7 +85,7 @@ curl https://your-service.up.railway.app/health
 | Railway | `POST /chat` | `GET /health` |
 | Vercel | `POST /api/chat` | `GET /api/health` |
 
-عند استخدام الواجهة مع Vercel، اضبط رابط الخادم في الإعدادات على `https://your-app.vercel.app/api` لأن الواجهة تضيف `/chat` تلقائيًا، فتصل إلى `POST /api/chat`. أما عند استخدام Railway فاضبطه على `https://your-service.railway.app` للوصول إلى `POST /chat`. إذا كانت الواجهة منشورة ضمن مشروع Vercel نفسه، يمكن لاحقًا جعل العنوان نسبيًا عبر إعداد frontend مخصص. لا تُرفع المفاتيح إلى GitHub، ولا تُعدّل `package.json` الجذر أو `server.js` لهذا المسار.
+عند استخدام الواجهة مع Vercel، يمكنك إدخال `https://your-app.vercel.app` أو `https://your-app.vercel.app/api`؛ تتعرف الواجهة على نطاق Vercel وتضمن وجود `/api` قبل إضافة `/chat`، فتصل إلى `POST /api/chat`. أما عند استخدام Railway فاضبطه على `https://your-service.railway.app` للوصول إلى `POST /chat`. إذا كانت الواجهة منشورة ضمن مشروع Vercel نفسه، يمكن لاحقًا جعل العنوان نسبيًا عبر إعداد frontend مخصص. لا تُرفع المفاتيح إلى GitHub، ولا تُعدّل `package.json` الجذر أو `server.js` لهذا المسار.
 
 ## النشر عبر Render
 

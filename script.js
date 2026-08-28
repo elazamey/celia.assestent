@@ -59,9 +59,26 @@
     localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(messages.slice(-60)));
   }
 
+  function normalizeBackendUrl(url) {
+    const clean = String(url || '').trim().replace(/\/+$/, '');
+    if (!clean) return 'http://localhost:3000';
+
+    try {
+      const parsed = new URL(clean);
+      const pathname = parsed.pathname.replace(/\/+$/, '');
+      const isVercelHost = parsed.hostname === 'vercel.app' || parsed.hostname.endsWith('.vercel.app');
+      if (isVercelHost && !pathname.endsWith('/api')) {
+        parsed.pathname = `${pathname}/api`.replace(/^\/\//, '/');
+      }
+      return parsed.toString().replace(/\/$/, '');
+    } catch {
+      return clean;
+    }
+  }
+
   function getBackendUrl() {
     const configured = window.CELIA_CONFIG?.BACKEND_URL;
-    return (localStorage.getItem(STORAGE_KEYS.backendUrl) || configured || 'http://localhost:3000').replace(/\/$/, '');
+    return normalizeBackendUrl(localStorage.getItem(STORAGE_KEYS.backendUrl) || configured || 'http://localhost:3000');
   }
 
   function setLanguage(nextLanguage) {
@@ -226,7 +243,7 @@
   settingsForm.addEventListener('submit', (event) => {
     if (event.submitter?.value === 'cancel') return;
     event.preventDefault();
-    const value = backendInput.value.trim().replace(/\/$/, '');
+    const value = normalizeBackendUrl(backendInput.value);
     if (value) localStorage.setItem(STORAGE_KEYS.backendUrl, value);
     settingsDialog.close();
   });
