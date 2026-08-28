@@ -1,12 +1,20 @@
 # celia.assestent
 
-خلفية MVP بسيطة لمساعد Celia. تقدم نقطة نهاية واحدة للمحادثة (`POST /chat`) مع استخدام Groq كمزود أساسي وGemini كمزود احتياطي تلقائيًا عند الفشل أو عدم توفر المزود الأساسي.
+خلفية وواجهة MVP لمساعد Celia. يقدّم المشروع نقطة نهاية واحدة للمحادثة (`POST /chat`) مع استخدام Groq كمزوّد أساسي وGemini كمزوّد احتياطي تلقائيًا عند الفشل أو عدم توفر المزود الأساسي.
 
-## المتطلبات
+## المكونات
 
-يتطلب المشروع Node.js 18 أو أحدث. لا تُضمّن مفاتيح API داخل الكود أو المستودع؛ استخدم متغيرات البيئة فقط.
+| المكوّن | الوظيفة |
+|---|---|
+| `server.js` | خادم Express مع `/chat` و`/health` وتبديل Groq/Gemini |
+| `index.html` و`style.css` و`script.js` | واجهة محادثة متجاوبة مع العربية RTL والإنجليزية LTR والوضع الليلي |
+| `railway.json` | إعداد Railway لأمر التشغيل ومسار فحص الصحة |
+| `.github/workflows/ci.yml` | فحص الصياغة واختبار الصحة عند كل push أو Pull Request |
+| `sync-to-github.sh` | مزامنة محلية آمنة مع فحص الملفات الحساسة قبل الرفع |
 
 ## التشغيل المحلي
+
+يتطلب المشروع Node.js 18 أو أحدث. ثبّت الاعتماديات وانسخ ملف البيئة النموذجي، ثم أضف المفاتيح محليًا فقط:
 
 ```bash
 npm install
@@ -15,7 +23,7 @@ cp .env.example .env
 npm start
 ```
 
-فحص الحالة:
+فحص الخادم:
 
 ```bash
 curl http://localhost:3000/health
@@ -29,31 +37,90 @@ curl -X POST http://localhost:3000/chat \
   -d '{"message":"مرحبًا، عرّف نفسك"}'
 ```
 
-شكل الاستجابة:
-
-```json
-{
-  "provider": "groq",
-  "response": "..."
-}
-```
+لا تُرفع ملفات `.env` أو مفاتيح API إلى GitHub. يستخدم الخادم متغير `PORT` الذي توفره منصة الاستضافة، ويقيّد طول الرسالة والمهلة الزمنية افتراضيًا.
 
 ## تشغيل الواجهة الأمامية
 
-يمكن فتح `index.html` مباشرة في المتصفح، أو تشغيل خادم ملفات محلي من مجلد المشروع:
+شغّل خادم ملفات محليًا من مجلد المشروع:
 
 ```bash
 npx --yes http-server . -p 4173
 ```
 
-بعدها افتح `http://127.0.0.1:4173/index.html`. تستخدم الواجهة افتراضيًا `http://localhost:3000` كعنوان للخادم. يمكن تغيير العنوان من زر الإعدادات وحفظه في `localStorage`، ولا تحتاج الواجهة إلى أي مفتاح API. تدعم الواجهة العربية RTL والإنجليزية LTR، الوضع الليلي، الاقتراحات السريعة، وحفظ آخر 60 رسالة محليًا.
+ثم افتح `http://127.0.0.1:4173/index.html`. تستخدم الواجهة افتراضيًا `http://localhost:3000`، ويمكن تغيير عنوان الخادم من زر الإعدادات؛ يُحفظ العنوان في `localStorage`. لا تحتاج الواجهة إلى أي مفتاح API.
 
-## المزامنة والرفع
+## النشر على Railway
 
-يُرفع الكود إلى فرع `main` فقط بعد فحص محلي، ولا تُرفع ملفات `.env` أو `node_modules`. ملف GitHub Actions في `.github/workflows/ci.yml` يشغّل فحص الصياغة واختبارًا صحيًا تلقائيًا عند كل `push` أو Pull Request. كما أن الواجهة الأمامية تُفحص ضمن بنية المستودع عبر `index.html` و`style.css` و`script.js`.
+يمكن نشر المشروع من خلال ربط مستودع GitHub `elazamey/celia.assestent` بخدمة جديدة في Railway. سيقرأ Railway ملف `railway.json` الموجود بجوار الكود ويستخدم `npm start` لتشغيل الخادم، مع ضبط `/health` كمسار فحص الصحة. يعتمد التطبيق على متغير `PORT` الذي توفره Railway، لذلك لا ينبغي تثبيت منفذ إنتاجي داخل الكود [1] [2].
 
-المزامنة التلقائية من جهازك أو بيئة أخرى تحتاج إلى تشغيل GitHub Actions أو عميل Git على تلك البيئة. لا يُنصح باستخدام مهمة مجدولة لرفع الملفات دون مراجعة؛ المسار الآمن هو commit واضح ثم push، مع فحص الأسرار قبل الرفع.
+بعد إنشاء الخدمة، أضف المتغيرات التالية من قسم Variables في Railway:
 
-## ملاحظات أمنية
+| المتغير | القيمة |
+|---|---|
+| `GROQ_API_KEY` | مفتاح Groq الخاص بك |
+| `GEMINI_API_KEY` | مفتاح Gemini الخاص بك |
+| `GROQ_MODEL` | اختياري؛ الافتراضي `llama-3.1-8b-instant` |
+| `GEMINI_MODEL` | اختياري؛ الافتراضي `gemini-1.5-flash` |
+| `CORS_ORIGIN` | نطاق الواجهة، أو قيمة مؤقتة للاختبار فقط |
+| `NODE_ENV` | `production` |
 
-في الإنتاج، قيّد `CORS_ORIGIN` إلى نطاق الواجهة الفعلي، وأضف مصادقة وحدود معدل قبل فتح endpoint للعامة. لا تظهر تفاصيل أخطاء المزودين إلا عند `NODE_ENV=development`.
+لا تضع القيم السرية في `railway.json` أو `README.md` أو أي commit. بعد نجاح النشر، استخدم رابط الخدمة العام في إعدادات الواجهة، مثل `https://your-service.up.railway.app`، ثم اختبر:
+
+```bash
+curl https://your-service.up.railway.app/health
+```
+
+ينتظر Railway استجابة HTTP 200 من `/health` قبل تفعيل النسخة الجديدة، لكنه لا يستخدم هذا المسار للمراقبة المستمرة بعد اكتمال النشر [2].
+
+> ملاحظة: ملف `railway.json` هو إعداد نشر بسيط متوافق مع Config as Code الحالي. توضح وثائق Railway أن هذا المسار أصبح قديمًا نسبيًا وتفضّل Infrastructure as Code للمشاريع الجديدة، مع استمرار دعم الملفات الحالية خلال الفترة الانتقالية [1].
+
+## النشر عبر Render
+
+يمكن استخدام نفس مستودع GitHub على Render كخدمة Web Service. استخدم أمر البناء `npm install` وأمر التشغيل `npm start`، واضبط المتغيرات نفسها في لوحة الخدمة. اجعل مسار فحص الصحة `/health` إذا كان الخيار متاحًا في إعدادات الخدمة.
+
+## المزامنة والاختبارات
+
+بعد تعديل الكود من بيئة التطوير، استخدم:
+
+```bash
+./sync-to-github.sh "وصف التغيير"
+```
+
+ينفذ السكربت `pull --rebase` ثم يراجع الملفات المرحّلة بحثًا عن `.env` والشهادات ومفاتيح الاعتماد قبل تنفيذ `commit` و`push`. كما يشغّل GitHub Actions فحص الصياغة واختبار `/health` عند كل push أو Pull Request.
+
+للتشغيل المحلي للفحوص:
+
+```bash
+node --check server.js
+node --check script.js
+bash -n sync-to-github.sh
+git diff --check
+```
+
+## English
+
+### Overview
+
+`celia.assestent` is a minimal chat MVP with an Express backend and a static frontend. The backend exposes `POST /chat`, uses Groq as the primary provider, and falls back to Gemini when the primary provider is unavailable. `GET /health` reports whether provider credentials are configured without exposing their values.
+
+### Local setup
+
+```bash
+npm install
+cp .env.example .env
+# Add GROQ_API_KEY and GEMINI_API_KEY to .env
+npm start
+```
+
+Run the static frontend with `npx --yes http-server . -p 4173`, then open `http://127.0.0.1:4173/index.html`. The frontend defaults to `http://localhost:3000` and lets the user change the backend URL from Settings. API keys must remain server-side.
+
+### Railway deployment
+
+Create a Railway service from the GitHub repository `elazamey/celia.assestent`. The included `railway.json` sets the `npm start` command and `/health` deployment healthcheck. Add `GROQ_API_KEY`, `GEMINI_API_KEY`, `NODE_ENV=production`, and a production `CORS_ORIGIN` in Railway Variables. Do not commit secrets. After deployment, place the public service URL in the frontend Settings and verify it with `GET /health`.
+
+Railway injects the `PORT` variable and uses the configured healthcheck to wait for an HTTP 200 response before activating a new deployment [2]. The healthcheck is a deployment gate, not continuous monitoring after activation [2].
+
+## المراجع / References
+
+[1]: https://docs.railway.com/config-as-code/reference "Railway Docs — Config as Code Reference"
+[2]: https://docs.railway.com/deployments/healthchecks "Railway Docs — Healthchecks"
